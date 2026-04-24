@@ -1,0 +1,150 @@
+{
+  "entities": {
+    "Client": {
+      "title": "Client",
+      "description": "Customer information for the ERP system",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name or company name" },
+        "type": { "type": "string", "enum": ["PF", "PJ"] },
+        "document": { "type": "string", "description": "CPF or CNPJ" },
+        "phone": { "type": "string" },
+        "phone2": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "address": { "type": "string" },
+        "cep": { "type": "string" },
+        "notes": { "type": "string" },
+        "priority": { "type": "number", "description": "Priority score 1-6" },
+        "isRental": { "type": "boolean" },
+        "rentalModel": { "type": "string" },
+        "rentalSerialNumber": { "type": "string" },
+        "rentalId": { "type": "string" },
+        "rentalTotalPages": { "type": "number" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" },
+        "uid": { "type": "string", "description": "Owner UID" }
+      },
+      "required": ["name", "uid"]
+    },
+    "Equipment": {
+      "title": "Equipment",
+      "description": "Machines belonging to clients",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "brand": { "type": "string" },
+        "model": { "type": "string" },
+        "serialNumber": { "type": "string" },
+        "color": { "type": "string" },
+        "type": { "type": "string" },
+        "warrantyStatus": { "type": "string", "enum": ["IN_WARRANTY", "OUT_WARRANTY", "WARRANTY_RETURN"] },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" },
+        "uid": { "type": "string" }
+      },
+      "required": ["clientId", "brand", "model", "serialNumber", "uid"]
+    },
+    "ServiceOrder": {
+      "title": "Service Order",
+      "description": "Technical service request",
+      "type": "object",
+      "properties": {
+        "osNumber": { "type": "string" },
+        "clientId": { "type": "string" },
+        "equipmentId": { "type": "string" },
+        "status": { "type": "string" },
+        "priority": { "type": "number" },
+        "description": { "type": "string" },
+        "diagnosis": { "type": "string" },
+        "budget": { "type": "number" },
+        "trackingToken": { "type": "string" },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "url": { "type": "string" },
+              "type": { "type": "string" },
+              "size": { "type": "number" },
+              "uploadedAt": { "type": "number" }
+            }
+          }
+        },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" },
+        "finishedAt": { "type": "number" },
+        "uid": { "type": "string" }
+      },
+      "required": ["osNumber", "clientId", "equipmentId", "status", "priority", "uid"]
+    },
+    "StatusHistory": {
+      "title": "Status History",
+      "description": "Log of OS status changes",
+      "type": "object",
+      "properties": {
+        "osId": { "type": "string" },
+        "fromStatus": { "type": "string" },
+        "toStatus": { "type": "string" },
+        "changedBy": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "notes": { "type": "string" }
+      },
+      "required": ["osId", "fromStatus", "toStatus", "changedBy", "timestamp"]
+    },
+    "DeletionLog": {
+      "title": "Deletion Log",
+      "description": "Audit trail for deleted records",
+      "type": "object",
+      "properties": {
+        "entityType": { "type": "string", "enum": ["CLIENT", "EQUIPMENT", "OS"] },
+        "entityId": { "type": "string" },
+        "description": { "type": "string" },
+        "reason": { "type": "string" },
+        "deletedBy": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["entityType", "entityId", "reason", "deletedBy", "timestamp"]
+    },
+    "Setting": {
+      "title": "System Setting",
+      "description": "Global system parameters",
+      "type": "object",
+      "properties": {
+        "category": { "type": "string", "enum": ["EQUIPMENT_TYPE", "BRAND", "COLOR"] },
+        "value": { "type": "string" },
+        "active": { "type": "boolean" },
+        "order": { "type": "number" }
+      },
+      "required": ["category", "value", "active", "order"]
+    }
+  },
+  "firestore": {
+    "/clients/{clientId}": {
+      "schema": { "$ref": "Client" },
+      "description": "Customer collection"
+    },
+    "/equipment/{equipmentId}": {
+      "schema": { "$ref": "Equipment" },
+      "description": "Equipment collection"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "ServiceOrder" },
+      "description": "Service orders collection"
+    },
+    "/statusHistory/{historyId}": {
+      "schema": { "$ref": "StatusHistory" },
+      "description": "OS status audit trail"
+    },
+    "/deletionLogs/{logId}": {
+      "schema": { "$ref": "DeletionLog" },
+      "description": "Audit log for deletions"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "Setting" },
+      "description": "System configuration"
+    }
+  }
+}

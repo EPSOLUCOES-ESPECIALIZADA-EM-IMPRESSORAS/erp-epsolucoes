@@ -1,0 +1,147 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: clients
+    // Fields: name (string), type (PF|PJ), document (string), phone (string), email (string), address (string), notes (string), priority (number), createdAt (number), updatedAt (number), uid (string)
+    //
+    // Collection: equipment
+    // Fields: clientId (string), brand (string), model (string), serialNumber (string), color (string), type (string), warrantyStatus (string), notes (string), createdAt (number), updatedAt (number), uid (string)
+    //
+    // Collection: orders
+    // Fields: osNumber (string), clientId (string), equipmentId (string), status (string), priority (number), description (string), diagnosis (string), budget (number), trackingToken (string), attachments (array), createdAt (number), updatedAt (number), finishedAt (number), uid (string)
+    //
+    // Collection: statusHistory
+    // Fields: osId (string), fromStatus (string), toStatus (string), changedBy (string), timestamp (number), notes (string)
+    //
+    // Collection: deletionLogs
+    // Fields: entityType (CLIENT|EQUIPMENT|OS), entityId (string), description (string), reason (string), deletedBy (string), timestamp (number)
+    //
+    // Collection: settings
+    // Fields: category (EQUIPMENT_TYPE|BRAND|COLOR), value (string), active (bool), order (number)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' || 
+         (request.auth.token.email == "epsolucoesemimpressoras@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // Domain Validators
+    function isValidClient(data) {
+      return data.keys().hasAll(['name', 'type', 'document', 'priority', 'uid']) &&
+             data.name is string && data.name.size() > 0 &&
+             data.type in ['PF', 'PJ'] &&
+             data.document is string && data.document.size() >= 10 &&
+             data.priority is number &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidEquipment(data) {
+      return data.keys().hasAll(['clientId', 'brand', 'model', 'serialNumber', 'uid']) &&
+             data.clientId is string &&
+             data.brand is string &&
+             data.model is string &&
+             data.serialNumber is string &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['osNumber', 'clientId', 'equipmentId', 'status', 'priority', 'uid']) &&
+             data.osNumber is string &&
+             data.clientId is string &&
+             data.equipmentId is string &&
+             data.status is string &&
+             data.priority is number &&
+             (!('attachments' in data) || data.attachments is list) &&
+             data.uid == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(userId) && request.resource.data.role == 'user';
+      allow update: if isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role);
+    }
+
+    match /clients/{clientId} {
+      allow get: if true;
+      allow list: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (isAdmin() || isDocOwner());
+      allow delete: if isAdmin();
+    }
+
+    match /equipment/{equipmentId} {
+      allow get: if true;
+      allow list: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (isAdmin() || isDocOwner());
+      allow delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (isAdmin() || isDocOwner());
+      allow delete: if isAdmin();
+    }
+
+    match /statusHistory/{historyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+    }
+
+    match /deletionLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
