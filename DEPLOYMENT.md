@@ -13,12 +13,22 @@ O commit local de preparacao para deploy ja foi publicado na branch `main`.
 
 ## 2. Firebase de producao
 
+Status atual: pendente de login Google/Firebase. A CLI do Firebase foi validada neste ambiente, mas nao ha conta autorizada em `firebase login:list`, entao a criacao do projeto e a publicacao das regras precisam de uma autenticacao Google.
+
 1. Criar um projeto Firebase proprio da EPSOLUCOES.
 2. Ativar Authentication com provedor Google.
 3. Criar Firestore. Use o banco padrao `(default)`, salvo se houver motivo para usar um database id customizado.
 4. Ativar Firebase Storage.
 5. Copiar as credenciais do app web para `.env.local` e para as variaveis de ambiente do Cloudflare Pages.
 6. Publicar `firestore.rules` e `storage.rules`.
+
+Comandos esperados depois do login Firebase:
+
+```bash
+firebase projects:create erp-epsolucoes-prod --display-name "ERP EPSOLUCOES"
+firebase use --add
+firebase deploy --only firestore:rules,storage
+```
 
 ## 3. Cloudflare Pages
 
@@ -32,12 +42,32 @@ Projeto Pages criado na conta Cloudflare:
 
 Uma primeira versao foi publicada por Direct Upload para validacao do sistema no ar. Ela ainda usa o fallback `firebase-applet-config.json` enquanto o Firebase proprio da EPSOLUCOES nao for configurado nas variaveis `VITE_FIREBASE_*`.
 
-Importante: a Cloudflare nao permite converter um projeto Pages criado como Direct Upload para GitHub source pela API. Para deploy continuo automatico via GitHub, existem duas opcoes:
+Importante: a Cloudflare nao permite converter um projeto Pages criado como Direct Upload para GitHub source pela API. Uma tentativa de criar um novo Pages conectado diretamente ao GitHub tambem retornou erro interno na instalacao GitHub do Cloudflare Pages.
 
-1. Manter este projeto como Direct Upload e publicar manualmente quando necessario.
-2. Recriar o projeto Pages conectado ao GitHub, usando o mesmo repositorio e as mesmas configuracoes.
+Decisao atual: manter o projeto Pages existente e automatizar o deploy por GitHub Actions usando Direct Upload. Assim o endereco `https://erp-epsolucoes.pages.dev` permanece igual e cada push no `main` pode publicar automaticamente.
 
-Configuracao recomendada para o Pages conectado ao GitHub:
+Workflow criado:
+
+- `.github/workflows/deploy-cloudflare-pages.yml`
+- Instala dependencias com `npm ci`
+- Roda `npm run lint`
+- Roda `npm run build`
+- Publica `dist` no projeto Cloudflare Pages `erp-epsolucoes`
+
+Segredos/variaveis necessarios no GitHub Actions:
+
+- Secret `CLOUDFLARE_API_TOKEN`: token Cloudflare com permissao para publicar Pages no account `fe38d89d9663215f3453085d49c80f37`.
+- Secret `VITE_FIREBASE_API_KEY`
+- Secret `VITE_GEMINI_API_KEY`, opcional
+- Variable `VITE_FIREBASE_AUTH_DOMAIN`
+- Variable `VITE_FIREBASE_PROJECT_ID`
+- Variable `VITE_FIREBASE_STORAGE_BUCKET`
+- Variable `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- Variable `VITE_FIREBASE_APP_ID`
+- Variable `VITE_FIREBASE_MEASUREMENT_ID`
+- Variable `VITE_FIREBASE_DATABASE_ID`
+
+Configuracao usada pelo workflow:
 
 - Build command: `npm run build`
 - Output directory: `dist`
