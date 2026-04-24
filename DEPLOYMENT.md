@@ -13,22 +13,44 @@ O commit local de preparacao para deploy ja foi publicado na branch `main`.
 
 ## 2. Firebase de producao
 
-Status atual: pendente de login Google/Firebase. A CLI do Firebase foi validada neste ambiente, mas nao ha conta autorizada em `firebase login:list`, entao a criacao do projeto e a publicacao das regras precisam de uma autenticacao Google.
+Status atual:
 
-1. Criar um projeto Firebase proprio da EPSOLUCOES.
-2. Ativar Authentication com provedor Google.
-3. Criar Firestore. Use o banco padrao `(default)`, salvo se houver motivo para usar um database id customizado.
-4. Ativar Firebase Storage.
-5. Copiar as credenciais do app web para `.env.local` e para as variaveis de ambiente do Cloudflare Pages.
-6. Publicar `firestore.rules` e `storage.rules`.
+- Projeto Firebase criado: `erp-epsolucoes-prod`
+- App web criado: `ERP EPSOLUCOES Web`
+- App ID: `1:211181489925:web:38a616262132b53f38716c`
+- Firestore criado em `southamerica-east1`
+- Regras do Firestore publicadas com sucesso
+- Variaveis `VITE_FIREBASE_*` configuradas no Cloudflare Pages
+- Auth Google pendente de ativacao no Console Firebase
+- Storage pendente de ativacao/billing no Console Firebase
 
-Comandos esperados depois do login Firebase:
+Configuracao Firebase usada pelo frontend:
+
+- `VITE_FIREBASE_API_KEY`: configurado no Cloudflare Pages
+- `VITE_FIREBASE_AUTH_DOMAIN`: `erp-epsolucoes-prod.firebaseapp.com`
+- `VITE_FIREBASE_PROJECT_ID`: `erp-epsolucoes-prod`
+- `VITE_FIREBASE_STORAGE_BUCKET`: `erp-epsolucoes-prod.firebasestorage.app`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`: `211181489925`
+- `VITE_FIREBASE_APP_ID`: `1:211181489925:web:38a616262132b53f38716c`
+- `VITE_FIREBASE_DATABASE_ID`: `(default)`
+
+Comandos ja executados:
 
 ```bash
 firebase projects:create erp-epsolucoes-prod --display-name "ERP EPSOLUCOES"
-firebase use --add
-firebase deploy --only firestore:rules,storage
+firebase apps:create WEB "ERP EPSOLUCOES Web" --project erp-epsolucoes-prod
+firebase firestore:databases:create "(default)" --location southamerica-east1 --edition standard --project erp-epsolucoes-prod
+firebase deploy --only firestore:rules --project erp-epsolucoes-prod
 ```
+
+Pendencias no Console Firebase:
+
+1. Em Authentication, clicar em "Get started" e ativar o provedor Google.
+2. Em Authentication > Settings > Authorized domains, confirmar/adicionar:
+   - `erp-epsolucoes.pages.dev`
+   - `erp-epsolucoes-prod.firebaseapp.com`
+3. Em Storage, ativar o bucket padrao. A criacao por API retornou bloqueio de permissao/billing; se o Console pedir, habilitar billing/Blaze antes.
+4. Depois do bucket existir, publicar `storage.rules`.
 
 ## 3. Cloudflare Pages
 
