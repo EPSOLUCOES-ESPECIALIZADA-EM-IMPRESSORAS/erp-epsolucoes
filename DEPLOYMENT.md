@@ -109,6 +109,19 @@ Depois do deploy do Worker, configurar:
 
 Status: o codigo esta preparado, mas o Wrangler local ainda nao esta autenticado. Execute `wrangler login` e autorize a conta Cloudflare para criar o bucket e publicar o Worker.
 
+Atualizacao:
+
+- Wrangler autenticado como `epsolucoesemimpressoras@gmail.com`
+- Bucket R2 criado: `erp-epsolucoes-attachments`
+- Worker publicado: `erp-epsolucoes-attachments`
+- Worker URL: `https://erp-epsolucoes-attachments.epsolucoesemimpressoras.workers.dev`
+- Cloudflare Pages variable `VITE_UPLOADS_API_URL` configurada em production e preview
+- Site publicado novamente no Pages com a API de anexos R2
+- Verificado:
+  - `https://erp-epsolucoes.pages.dev` retorna 200
+  - `https://erp-epsolucoes.pages.dev/orders` retorna 200
+  - Worker responde corretamente para rota `/files/...`
+
 Segredos/variaveis necessarios no GitHub Actions:
 
 - Secret `CLOUDFLARE_API_TOKEN`: token Cloudflare com permissao para publicar Pages no account `fe38d89d9663215f3453085d49c80f37`.
