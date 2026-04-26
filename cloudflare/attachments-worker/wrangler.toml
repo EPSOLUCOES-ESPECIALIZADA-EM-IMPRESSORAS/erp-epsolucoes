@@ -1,0 +1,12 @@
+name = "erp-epsolucoes-attachments"
+main = "worker.js"
+compatibility_date = "2026-04-24"
+
+[[r2_buckets]]
+binding = "ATTACHMENTS"
+bucket_name = "erp-epsolucoes-attachments"
+
+[vars]
+ALLOWED_ORIGINS = "https://erp-epsolucoes.pages.dev"
+PUBLIC_BASE_URL = "https://erp-epsolucoes-attachments.epsolucoesemimpressoras.workers.dev"
+FIREBASE_API_KEY = "AIzaSyC-C2L0XjDTasiAQ4umwd-Rjo4Q1OfVtUE"

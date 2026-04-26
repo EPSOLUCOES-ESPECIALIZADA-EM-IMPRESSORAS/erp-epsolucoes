@@ -11,6 +11,7 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_DATABASE_ID?: string;
   readonly VITE_GEMINI_API_KEY?: string;
   readonly VITE_APP_URL?: string;
+  readonly VITE_UPLOADS_API_URL?: string;
 }
 
 interface ImportMeta {

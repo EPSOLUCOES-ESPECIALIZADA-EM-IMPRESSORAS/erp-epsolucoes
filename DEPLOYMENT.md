@@ -22,14 +22,14 @@ Status atual:
 - Regras do Firestore publicadas com sucesso
 - Variaveis `VITE_FIREBASE_*` configuradas no Cloudflare Pages
 - Auth Google pendente de ativacao no Console Firebase
-- Storage pendente de ativacao/billing no Console Firebase
+- Storage substituido por Cloudflare R2 para evitar dependencia de billing/Blaze no Firebase Storage
 
 Configuracao Firebase usada pelo frontend:
 
 - `VITE_FIREBASE_API_KEY`: configurado no Cloudflare Pages
 - `VITE_FIREBASE_AUTH_DOMAIN`: `erp-epsolucoes-prod.firebaseapp.com`
 - `VITE_FIREBASE_PROJECT_ID`: `erp-epsolucoes-prod`
-- `VITE_FIREBASE_STORAGE_BUCKET`: `erp-epsolucoes-prod.firebasestorage.app`
+- `VITE_FIREBASE_STORAGE_BUCKET`: nao e mais usado para anexos; uploads usam Cloudflare R2
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`: `211181489925`
 - `VITE_FIREBASE_APP_ID`: `1:211181489925:web:38a616262132b53f38716c`
 - `VITE_FIREBASE_DATABASE_ID`: `(default)`
@@ -49,8 +49,7 @@ Pendencias no Console Firebase:
 2. Em Authentication > Settings > Authorized domains, confirmar/adicionar:
    - `erp-epsolucoes.pages.dev`
    - `erp-epsolucoes-prod.firebaseapp.com`
-3. Em Storage, ativar o bucket padrao. A criacao por API retornou bloqueio de permissao/billing; se o Console pedir, habilitar billing/Blaze antes.
-4. Depois do bucket existir, publicar `storage.rules`.
+3. Firebase Storage nao sera usado nesta etapa. Os anexos de OS serao armazenados no Cloudflare R2.
 
 ## 3. Cloudflare Pages
 
@@ -76,6 +75,40 @@ Workflow criado:
 - Roda `npm run build`
 - Publica `dist` no projeto Cloudflare Pages `erp-epsolucoes`
 
+## 4. Cloudflare R2 para anexos
+
+Decisao atual: usar Cloudflare R2 em vez de Firebase Storage para anexos e fotos de OS. Isso evita habilitar billing/Blaze apenas para armazenamento de arquivos.
+
+Arquivos adicionados:
+
+- `cloudflare/attachments-worker/worker.js`
+- `cloudflare/attachments-worker/wrangler.toml`
+- `src/lib/uploads.ts`
+
+Arquitetura:
+
+```text
+React/Vite no Cloudflare Pages
+  -> Firebase Auth + Firestore
+  -> Cloudflare Worker /uploads
+  -> Cloudflare R2 bucket erp-epsolucoes-attachments
+```
+
+Comandos para publicar quando o Wrangler estiver autenticado:
+
+```bash
+wrangler r2 bucket create erp-epsolucoes-attachments
+cd cloudflare/attachments-worker
+wrangler deploy
+```
+
+Depois do deploy do Worker, configurar:
+
+- Cloudflare Pages variable `VITE_UPLOADS_API_URL=https://erp-epsolucoes-attachments.epsolucoesemimpressoras.workers.dev`
+- GitHub Actions variable `VITE_UPLOADS_API_URL=https://erp-epsolucoes-attachments.epsolucoesemimpressoras.workers.dev`
+
+Status: o codigo esta preparado, mas o Wrangler local ainda nao esta autenticado. Execute `wrangler login` e autorize a conta Cloudflare para criar o bucket e publicar o Worker.
+
 Segredos/variaveis necessarios no GitHub Actions:
 
 - Secret `CLOUDFLARE_API_TOKEN`: token Cloudflare com permissao para publicar Pages no account `fe38d89d9663215f3453085d49c80f37`.
@@ -88,6 +121,7 @@ Segredos/variaveis necessarios no GitHub Actions:
 - Variable `VITE_FIREBASE_APP_ID`
 - Variable `VITE_FIREBASE_MEASUREMENT_ID`
 - Variable `VITE_FIREBASE_DATABASE_ID`
+- Variable `VITE_UPLOADS_API_URL`
 
 Configuracao usada pelo workflow:
 
@@ -108,7 +142,7 @@ Variaveis de ambiente:
 - `VITE_APP_URL`
 - `VITE_GEMINI_API_KEY`, opcional
 
-## 4. Checklist pos-deploy
+## 5. Checklist pos-deploy
 
 - Adicionar o dominio final do Pages nos dominios autorizados do Firebase Authentication.
 - Entrar com Google.

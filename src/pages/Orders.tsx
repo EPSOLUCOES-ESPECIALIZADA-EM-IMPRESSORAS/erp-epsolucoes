@@ -66,7 +66,7 @@ import { cn, toUpperCase, normalizeSearchString } from "@/lib/utils";
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/FirebaseProvider';
-import { uploadFile } from '@/lib/firebase';
+import { uploadFile } from '@/lib/uploads';
 import {
   Dialog,
   DialogContent,
@@ -292,10 +292,10 @@ export default function OrdersPage() {
       toast.success('Arquivo(s) enviado(s) com sucesso!');
     } catch (error: any) {
       console.error(error);
-      if (error?.code === 'storage/retry-limit-exceeded' || error?.message?.includes('retry-limit-exceeded')) {
+      if (error?.message?.includes('tempo limite') || error?.message?.includes('timeout')) {
         toast.error('O tempo limite de upload foi excedido. Verifique sua conexão ou tente novamente mais tarde.');
       } else {
-        toast.error('Erro ao enviar arquivo.');
+        toast.error(error?.message || 'Erro ao enviar arquivo.');
       }
     } finally {
       setIsUploading(false);

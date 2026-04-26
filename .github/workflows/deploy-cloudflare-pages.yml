@@ -23,6 +23,7 @@ jobs:
       VITE_FIREBASE_MEASUREMENT_ID: ${{ vars.VITE_FIREBASE_MEASUREMENT_ID }}
       VITE_FIREBASE_DATABASE_ID: ${{ vars.VITE_FIREBASE_DATABASE_ID }}
       VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+      VITE_UPLOADS_API_URL: ${{ vars.VITE_UPLOADS_API_URL }}
 
     steps:
       - name: Checkout
